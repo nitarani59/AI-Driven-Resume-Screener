@@ -8,16 +8,16 @@ The AI-Driven Resume Screener automatically extracts, analyzes, and ranks resume
 
 # High Level Design
 [HR Uploads ZIP + JD]
-        |
+        →
 [Spring Boot API Controller]
-        |
+        →
 [Resume Extraction → Apache Tika]
-        |
+        →
 [Parallel Processing with ExecutorService]
-        |
+        →
 [Call Agent AI for Scoring]
-        |
+        →
 [Aggregate & Rank Resumes]
-        |
+        →
 [Return Ranked JSON]
 
