@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 public class ResumeAnalyzerController {
@@ -16,7 +19,7 @@ public class ResumeAnalyzerController {
     @Autowired
     ResumeAnalyzerService resumeAnalyzerService;
     @PostMapping("/zip/upload")
-    public ResponseEntity<String> uploadResumes(@RequestParam MultipartFile file, @RequestParam String jobDescription) {
+    public ResponseEntity<List<Map<String, Object>>> uploadResumes(@RequestParam MultipartFile file, @RequestParam String jobDescription) {
         return ResponseEntity.ok(resumeAnalyzerService.process(file, jobDescription));
     }
 }
