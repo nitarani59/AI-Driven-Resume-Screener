@@ -77,33 +77,38 @@ public class AgentAIServiceImplementation implements AgentAIService {
     }
 
     private String buildPrompt(String jd, String resume) {
-        return """
-            You are an AI Resume Screener.
-            
-            🔹 Your response MUST be valid JSON only. Do not start or end with any special characters like ``` or quotes.
-            🔹 Analyze the Job Description (JD) and the Resume provided.
-            🔹 Be strict in evaluating how well the resume matches the JD.
-             - Be careful in reading the job description extract minute details like skills required, years of experience needed
-               
-            
-            Return a JSON object with these fields:
-            - matchedSkills: List of hard/technical skills from resume that match the JD.
-            - softSkills: List of soft skills from the resume.
-            - experienceYears: Integer years of experience mentioned in the resume.
-            - extraNotes: A short summary of the candidate's strengths and how they relate to the JD.
-            - score: A number between 0 and 100 that reflects how well the resume matches the JD.
-              
-            Scoring Guidelines:
-            - Only give high scores (above 75) if there is a strong skill and years of experience match with the Job description.
-            - Give a low score (below 40) if the resume is not relevant to the JD, missing most skills, or completely off-topic.
-            - If the JD is too short, missing, or invalid, return score as 0 and include that info in extraNotes.
-            
-            JD:
-            %s
-            
-            Resume:
-            %s
-            """.formatted(jd, resume);
+        String prompt = """
+You are an AI Resume Screener.
 
+🔹 Your response MUST be valid JSON only. Do not include any Markdown or special characters like ``` or quotes at the start or end.
+🔹 Analyze the following Job Description (JD) and Resume.
+🔹 Be strict and realistic in your evaluation.
+
+Return a JSON object with the following fields:
+- name: Full name of the candidate.
+- mobileNumber: Mobile number (if found).
+- emailId: Email address (if found).
+- highestEducation: Highest degree or qualification (e.g., B.Tech in CSE).
+- educationYear: Year the highest education was completed.
+- previousCompanies: List of company names where the candidate has worked.
+- matchedSkills: List of hard/technical skills from the resume that match the JD.
+- softSkills: List of soft skills from the resume.
+- experienceYears: Integer — total years of experience.
+- extraNotes: Short summary about the candidate’s relevance to the JD.
+- score: Integer (0 to 100) based on how well the resume matches the JD.
+
+Scoring Guidelines:
+- High score (75–100): Strong skill and experience match with the JD.
+- Medium score (40–74): Partial match.
+- Low score (below 40): Very little or no relevance.
+- If the JD is missing, invalid, or too generic, return score as 0 and explain in extraNotes.
+
+JD:
+%s
+
+Resume:
+%s
+""".formatted(jd, resume);
+return prompt;
     }
 }
