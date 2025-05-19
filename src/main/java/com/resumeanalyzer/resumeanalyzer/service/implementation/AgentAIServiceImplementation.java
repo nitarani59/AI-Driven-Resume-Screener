@@ -2,6 +2,7 @@ package com.resumeanalyzer.resumeanalyzer.service.implementation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resumeanalyzer.resumeanalyzer.model.ResumeResult;
 import com.resumeanalyzer.resumeanalyzer.service.AgentAIService;
 import com.resumeanalyzer.resumeanalyzer.config.WebConfig;
 import lombok.SneakyThrows;
@@ -13,7 +14,9 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
 
@@ -30,13 +33,14 @@ public class AgentAIServiceImplementation implements AgentAIService {
 
 
     @Override
-    public List<Map<String, Object>> handleBulkResume(String jd, List<String> resumeText) {
+    public List<ResumeResult> handleBulkResume(String jd, List<String> resumeText) {
+        String uploadId = UUID.randomUUID().toString();
         ExecutorService executorService = Executors.newFixedThreadPool(4);
-        List<Map<String, Object>> list = new ArrayList<>();
-        List<Future<Map<String, Object>>> futures = resumeText.stream().map(
-                resume ->  executorService.submit(() -> extractDetails(jd, resume))).collect(Collectors.toList());
+        List<ResumeResult> list = new ArrayList<>();
+        List<Future<ResumeResult>> futures = resumeText.stream().map(
+                resume ->  executorService.submit(() -> extractDetails(jd, resume, uploadId))).collect(Collectors.toList());
 
-        for (Future<Map<String, Object>> future : futures) {
+        for (Future<ResumeResult> future : futures) {
             try {
                 list.add(future.get());
             } catch (InterruptedException e) {
@@ -50,9 +54,8 @@ public class AgentAIServiceImplementation implements AgentAIService {
         return list;
     }
 
-    public Map<String, Object> extractDetails(String jd, String resumeText) {
+    public ResumeResult extractDetails(String jd, String resumeText, String uploadId) {
         String prompt = buildPrompt(jd, resumeText);
-        System.out.println("build Prompt " + prompt);
         Map<String, Object> requestBody = Map.of("contents",
                 List.of(Map.of("parts",
                         List.of(Map.of("text", prompt)))));
@@ -64,13 +67,16 @@ public class AgentAIServiceImplementation implements AgentAIService {
                 .bodyToMono(JsonNode.class)
                 .map(json -> json.at("/candidates/0/content/parts/0/text").asText())
                 .block();
-        System.out.println("json " + jsonResponse);
         String cleanedJson = jsonResponse
                 .replaceAll("(?s)```json\\s*", "")  // remove ```json (with optional newline)
                 .replaceAll("(?s)```", "")          // remove closing ```
                 .trim();
+        System.out.println("cleaned resp " + cleanedJson);
         try {
-            return objectMapper.readValue(cleanedJson, Map.class);
+            ResumeResult resp = objectMapper.readValue(cleanedJson, ResumeResult.class);
+            System.out.println("resp " + resp);
+            resp.setUploadId(uploadId);
+            return resp;
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse Gemini response", e);
         }
